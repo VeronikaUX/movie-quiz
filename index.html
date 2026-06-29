@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Movie Quiz Night</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#E91517;--red-h:#CC1012;
+  --lime:#CAFF58;--lime-d:#A8D43E;
+  --bg:#0E0E0C;--bg2:#181816;--bg3:#212120;--bg4:#2A2A28;
+  --bd:#303030;--bd-hi:#484846;
+  --tx:#EDECE6;--tx2:#A0A09A;--tx3:#636360;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif}
+.wrap{max-width:620px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+ 
+/* PASSWORD */
+.pw-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:1.5rem;padding:2rem}
+.pw-logo{font-size:28px;font-weight:600;letter-spacing:-0.03em;color:var(--tx)}
+.pw-logo span{color:var(--red)}
+.pw-card{background:var(--bg2);border:1px solid var(--bd-hi);padding:2rem;width:100%;max-width:360px}
+.pw-label{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;display:block}
+.pw-card p{font-size:13px;color:var(--tx2);margin-bottom:1.5rem;line-height:1.6}
+.pw-input{width:100%;background:var(--bg3);border:1px solid var(--bd-hi);color:var(--tx);font-family:inherit;font-size:15px;font-weight:600;padding:11px 13px;letter-spacing:0.12em;outline:none;margin-bottom:10px}
+.pw-input:focus{border-color:var(--lime-d)}
+.pw-err{font-size:12px;color:var(--red);margin-bottom:10px;min-height:18px}
+.btn-primary{width:100%;padding:12px 16px;background:var(--red);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px}
+.btn-primary:hover{background:var(--red-h)}
+.btn-primary:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.btn-primary:disabled{background:var(--bg4);color:var(--tx3);cursor:not-allowed}
+ 
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;padding-bottom:12px;border-bottom:1px solid var(--bd-hi)}
+.logo{font-size:22px;font-weight:600;letter-spacing:-0.03em;color:var(--tx)}.logo span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:8px}
+.tag{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--tx3)}
+.btn-share{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;background:transparent;border:1px solid var(--bd-hi);color:var(--tx2);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:border-color .15s,color .15s}
+.btn-share:hover,.btn-share.ok{border-color:var(--lime-d);color:var(--lime)}
+.btn-share:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+ 
+/* VIEWS */
+.view{display:none}.view.active{display:block}
+.toast-bar{background:var(--lime);color:#111;padding:9px 14px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;display:none;align-items:center;gap:8px;margin-bottom:1rem}
+.toast-bar.show{display:flex}
+.sec-label{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:10px}
+.card{background:var(--bg2);border:1px solid var(--bd);padding:1.25rem 1.5rem;margin-bottom:1rem}
+.card-desc{font-size:13px;color:var(--tx2);line-height:1.65;margin-bottom:1.25rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:10px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--tx2);margin-bottom:6px}
+.field-row{display:flex;gap:8px}.field-row input:first-child{flex:1}
+input[type=text],input[type=number]{background:var(--bg3);border:1px solid var(--bd-hi);color:var(--tx);font-family:inherit;font-size:13px;padding:9px 11px;width:100%;outline:none;-webkit-appearance:none}
+input::placeholder{color:var(--tx3)}
+input:focus{border-color:var(--lime-d);outline:2px solid rgba(202,255,88,.15);outline-offset:0}
+.hint{font-size:11px;color:var(--tx3);margin-top:5px;line-height:1.5}
+ 
+.clip-list{margin-top:.75rem}
+.clip-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);margin-bottom:4px}
+.clip-idx{width:26px;height:26px;background:var(--bg4);color:var(--tx2);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.clip-info{flex:1;min-width:0}.clip-name{font-size:13px;font-weight:500;color:var(--tx)}.clip-sub{font-size:11px;color:var(--tx3);margin-top:1px}
+.btn-remove{border:none;background:none;color:var(--tx3);cursor:pointer;padding:6px;display:flex;min-width:32px;min-height:32px;align-items:center;justify-content:center}
+.btn-remove:hover{color:var(--red)}.btn-remove:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+ 
+.status-strip{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--bd);padding:11px 16px;margin:.75rem 0}
+.status-lbl{font-size:11px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--tx3)}
+.status-n{font-size:22px;font-weight:600;color:var(--lime);line-height:1}
+ 
+.btn-launch{width:100%;padding:14px 20px;background:var(--bg2);color:var(--tx);border:1px solid var(--bd-hi);font-family:inherit;font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:52px;transition:border-color .15s,background .15s}
+.btn-launch:hover{border-color:var(--lime-d);background:var(--bg3)}
+.btn-launch:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.launch-arrow{font-size:20px;color:var(--lime);flex-shrink:0;line-height:1}
+ 
+/* QUIZ */
+.q-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;gap:8px}
+.q-counter{padding:6px 12px;background:var(--bg2);border:1px solid var(--bd);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--lime)}
+.btn-exit{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:transparent;border:1px solid var(--bd-hi);color:var(--tx2);font-family:inherit;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;min-height:36px}
+.btn-exit:hover{color:var(--tx);background:var(--bg3)}.btn-exit:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.dots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1rem}
+.dot{width:30px;height:30px;background:var(--bg3);border:1px solid var(--bd);font-size:11px;font-weight:600;color:var(--tx3);display:flex;align-items:center;justify-content:center;cursor:pointer;min-width:30px;transition:border-color .1s,background .1s;font-family:inherit}
+.dot:hover{border-color:var(--bd-hi);color:var(--tx2)}.dot:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.dot.active{background:var(--red);border-color:var(--red);color:#fff}
+.dot.done{background:var(--bg3);border-color:var(--lime-d);color:var(--lime-d)}
+ 
+.player{border:1px solid var(--bd-hi);margin-bottom:1rem}
+.player-head{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--bg2);border-bottom:1px solid var(--bd)}
+.player-title{font-size:15px;font-weight:600;color:var(--tx)}
+.spoiler-tag{font-size:10px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--lime-d);border:1px solid var(--lime-d);padding:3px 8px}
+.yt-wrap{position:relative;padding-bottom:56.25%;background:#000}
+.yt-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;background:#000;border:none}
+.overlay svg{opacity:.22}
+.overlay-lbl{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,.22)}
+.player-foot{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2)}
+.timer-val{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tx);min-width:40px;line-height:1}
+.timer-val.warn{color:var(--red)}
+.pbar-track{flex:1;height:3px;background:var(--bg4)}.pbar-fill{height:100%;background:var(--red);transition:width 1s linear}
+.btn-ctrl{width:38px;height:38px;background:var(--bg3);border:1px solid var(--bd-hi);color:var(--tx2);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .1s,color .1s;font-family:inherit}
+.btn-ctrl:hover{background:var(--bg4);color:var(--tx)}.btn-ctrl:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.nav-row{display:flex;gap:8px}
+.btn-nav{flex:1;padding:11px;background:var(--bg2);border:1px solid var(--bd-hi);color:var(--tx2);font-family:inherit;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;transition:border-color .15s,background .15s,color .15s}
+.btn-nav:hover:not(:disabled){border-color:var(--bd-hi);background:var(--bg3);color:var(--tx)}
+.btn-nav:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.btn-nav:disabled{background:var(--bg2);border-color:var(--bd);color:var(--tx3);cursor:not-allowed}
+</style>
+</head>
+<body>
+ 
+<!-- PASSWORD SCREEN -->
+<div id="pw-screen" class="pw-screen">
+  <div class="pw-logo">MOVIE<span>.</span>QUIZ</div>
+  <div class="pw-card">
+    <span class="pw-label">Team access</span>
+    <p>Enter the team password to access quiz night.</p>
+    <input class="pw-input" type="password" id="pw-input" placeholder="••••••" autocomplete="off"
+      onkeydown="if(event.key==='Enter')checkPw()" aria-label="Team password" />
+    <div class="pw-err" id="pw-err" role="alert"></div>
+    <button class="btn-primary" onclick="checkPw()">Enter</button>
+  </div>
+</div>
+ 
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">MOVIE<span>.</span>QUIZ</div>
+      <div class="header-right">
+        <button class="btn-share" id="share-btn" onclick="shareLink()" aria-label="Copy shareable link">
+          &#128279; Copy link
+        </button>
+        <span class="tag">Team</span>
+      </div>
+    </div>
+ 
+    <!-- ADD VIEW -->
+    <div id="view-add" class="view active">
+      <div id="toast-bar" class="toast-bar" role="status" aria-live="polite">
+        <span id="toast-msg"></span>
+      </div>
+ 
+      <div class="card">
+        <div class="sec-label" id="form-heading">Submit your clips</div>
+        <p class="card-desc">Paste two YouTube links. Set a start time in seconds to skip any title screen. Each clip plays for 60 seconds — no one sees the movie name.</p>
+ 
+        <fieldset style="border:none;padding:0" aria-labelledby="form-heading">
+          <div class="field">
+            <label for="url1">Clip 01 — YouTube URL</label>
+            <div class="field-row">
+              <input type="text" id="url1" placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false" />
+              <input type="number" id="start1" placeholder="0s" min="0" style="width:68px" aria-label="Start time in seconds" />
+            </div>
+            <div class="hint">Start at (seconds) — skip the title card</div>
+          </div>
+          <div class="field">
+            <label for="url2">Clip 02 — YouTube URL</label>
+            <div class="field-row">
+              <input type="text" id="url2" placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false" />
+              <input type="number" id="start2" placeholder="0s" min="0" style="width:68px" aria-label="Start time in seconds" />
+            </div>
+          </div>
+          <button class="btn-primary" id="add-btn" onclick="submitClips()">
+            &#128064; Submit anonymously
+          </button>
+        </fieldset>
+      </div>
+ 
+      <div id="mine-section" style="display:none" aria-label="Your submitted clips">
+        <div class="sec-label">Your clips — only visible to you</div>
+        <div id="mine-list" class="clip-list"></div>
+      </div>
+ 
+      <div id="status-strip" class="status-strip" style="display:none" aria-live="polite">
+        <span class="status-lbl">Clips in the pool</span>
+        <span class="status-n" id="status-n">0</span>
+      </div>
+ 
+      <button class="btn-launch" onclick="startQuiz()" aria-label="Start quiz night">
+        <span>Start quiz night — shuffle and play all clips</span>
+        <span class="launch-arrow">&#8594;</span>
+      </button>
+    </div>
+ 
+    <!-- QUIZ VIEW -->
+    <div id="view-quiz" class="view">
+      <div class="q-topbar">
+        <div class="q-counter" id="q-counter" aria-live="polite">01 / 06</div>
+        <button class="btn-exit" onclick="exitQuiz()">&#10005; Exit</button>
+      </div>
+ 
+      <div class="dots" id="q-dots" role="tablist" aria-label="Clip navigation"></div>
+ 
+      <div class="player">
+        <div class="player-head">
+          <span class="player-title" id="q-title" aria-live="polite">Clip #01</span>
+          <span class="spoiler-tag">Title hidden</span>
+        </div>
+        <div class="yt-wrap">
+          <button class="overlay" id="overlay" onclick="playClip()" aria-label="Play clip">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="23" stroke="white" stroke-width="1.5"/>
+              <polygon points="19,14 38,24 19,34" fill="white"/>
+            </svg>
+            <span class="overlay-lbl">Tap to play</span>
+          </button>
+          <div id="yt-container" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
+        </div>
+        <div class="player-foot">
+          <span class="timer-val" id="timer" aria-live="off">60</span>
+          <div class="pbar-track" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="60" id="pbar">
+            <div class="pbar-fill" id="pfill" style="width:100%"></div>
+          </div>
+          <button class="btn-ctrl" id="play-ctrl" onclick="togglePlay()" aria-label="Play">&#9654;</button>
+          <button class="btn-ctrl" onclick="stopReset()" aria-label="Stop">&#9632;</button>
+        </div>
+      </div>
+ 
+      <div class="nav-row">
+        <button class="btn-nav" id="btn-prev" onclick="goClip(-1)" disabled aria-label="Previous clip">&#8592; Previous</button>
+        <button class="btn-nav" id="btn-next" onclick="goClip(1)" aria-label="Next clip">Next &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// REPLACE THESE TWO LINES WITH YOUR OWN VALUES FROM SUPABASE
+const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 
+const PASSWORD = 'IPA25';
+ 
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+ 
+let sid = sessionStorage.getItem('mqn_sid');
+if (!sid) { sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); sessionStorage.setItem('mqn_sid', sid); }
+ 
+let allClips=[], quizOrder=[], qi=0;
+let ytPlayer=null, ytReady=false, tInt=null, secs=60, playing=false, done=new Set();
+ 
+// PASSWORD
+function checkPw() {
+  const val = document.getElementById('pw-input').value.trim();
+  if (val === PASSWORD) {
+    sessionStorage.setItem('mqn_auth','1');
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  } else {
+    document.getElementById('pw-err').textContent = 'Wrong password. Try again.';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+ 
+window.addEventListener('load', () => {
+  if (sessionStorage.getItem('mqn_auth') === '1') {
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  }
+});
+ 
+// DATA
+function getVid(url) {
+  try {
+    const u = new URL(url.trim());
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+    return u.searchParams.get('v') || null;
+  } catch { return null; }
+}
+ 
+async function init() {
+  const { data } = await db.from('clips').select('*').order('created_at');
+  allClips = data || [];
+  render();
+}
+ 
+function render() {
+  const mine = allClips.filter(c => c.session_id === sid);
+  const n = allClips.length;
+  const ms = document.getElementById('mine-section');
+  const ml = document.getElementById('mine-list');
+  if (mine.length) {
+    ms.style.display = 'block';
+    ml.innerHTML = mine.map((c, i) => `
+      <div class="clip-row">
+        <div class="clip-idx">${String(i+1).padStart(2,'0')}</div>
+        <div class="clip-info">
+          <div class="clip-name">Your clip ${i+1}</div>
+          <div class="clip-sub">${c.start_sec > 0 ? 'Starts at ' + c.start_sec + 's' : 'From beginning'}</div>
+        </div>
+        <button class="btn-remove" onclick="removeClip('${c.id}')" aria-label="Remove clip ${i+1}">&#10005;</button>
+      </div>`).join('');
+  } else { ms.style.display = 'none'; }
+  const ss = document.getElementById('status-strip');
+  if (n) { ss.style.display = 'flex'; document.getElementById('status-n').textContent = n; }
+  else { ss.style.display = 'none'; }
+}
+ 
+async function submitClips() {
+  const u1 = document.getElementById('url1').value.trim();
+  const u2 = document.getElementById('url2').value.trim();
+  const s1 = parseInt(document.getElementById('start1').value) || 0;
+  const s2 = parseInt(document.getElementById('start2').value) || 0;
+  const v1 = getVid(u1), v2 = getVid(u2);
+  if (!v1 || !v2) { alert('Please enter two valid YouTube URLs.'); return; }
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { error } = await db.from('clips').insert([
+    { video_id: v1, start_sec: s1, session_id: sid },
+    { video_id: v2, start_sec: s2, session_id: sid }
+  ]);
+  if (error) { alert('Error saving: ' + error.message); btn.disabled=false; btn.innerHTML='&#128064; Submit anonymously'; return; }
+  ['url1','url2','start1','start2'].forEach(id => document.getElementById(id).value = '');
+  btn.disabled = false; btn.innerHTML = '&#128064; Submit anonymously';
+  toast('Clips submitted — identity hidden');
+  await init();
+}
+ 
+async function removeClip(id) {
+  await db.from('clips').delete().eq('id', id).eq('session_id', sid);
+  toast('Clip removed');
+  await init();
+}
+ 
+function shuffle(a) { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+ 
+async function startQuiz() {
+  await init();
+  if (!allClips.length) { alert('No clips yet! Share the link with your team first.'); return; }
+  quizOrder = shuffle(allClips); qi = 0; done = new Set();
+  document.getElementById('view-add').classList.remove('active');
+  document.getElementById('view-quiz').classList.add('active');
+  loadClip(0);
+}
+ 
+function exitQuiz() {
+  stopReset();
+  document.getElementById('view-quiz').classList.remove('active');
+  document.getElementById('view-add').classList.add('active');
+}
+ 
+function renderDots() {
+  document.getElementById('q-dots').innerHTML = quizOrder.map((_,i) => {
+    let cls='dot', lbl=`Go to clip ${i+1}`;
+    if(i===qi){cls+=' active'; lbl=`Clip ${i+1}, playing`;}
+    else if(done.has(i)){cls+=' done'; lbl=`Clip ${i+1}, watched`;}
+    return `<button class="${cls}" role="tab" aria-label="${lbl}" aria-selected="${i===qi}" onclick="loadClip(${i})">${String(i+1).padStart(2,'0')}</button>`;
+  }).join('');
+}
+ 
+function loadClip(i) {
+  stopReset(); qi=i; secs=60;
+  document.getElementById('q-title').textContent = `Clip #${String(i+1).padStart(2,'0')}`;
+  document.getElementById('q-counter').textContent = `${String(i+1).padStart(2,'0')} / ${String(quizOrder.length).padStart(2,'0')}`;
+  document.getElementById('timer').textContent = '60';
+  document.getElementById('timer').classList.remove('warn');
+  document.getElementById('pfill').style.width = '100%';
+  document.getElementById('pbar').setAttribute('aria-valuenow','60');
+  document.getElementById('btn-prev').disabled = i===0;
+  document.getElementById('btn-next').disabled = i===quizOrder.length-1;
+  document.getElementById('overlay').style.display = 'flex';
+  document.getElementById('yt-container').innerHTML = '';
+  if (ytPlayer) { try{ytPlayer.destroy();}catch(e){} ytPlayer=null; }
+  playing=false;
+  document.getElementById('play-ctrl').textContent = '▶';
+  document.getElementById('play-ctrl').setAttribute('aria-label','Play');
+  renderDots();
+}
+ 
+function playClip() {
+  const c = quizOrder[qi];
+  document.getElementById('overlay').style.display = 'none';
+  done.add(qi); renderDots(); playing=true;
+  document.getElementById('play-ctrl').textContent = '⏸';
+  document.getElementById('play-ctrl').setAttribute('aria-label','Pause');
+  if (ytReady) {
+    const d = document.createElement('div'); d.id = 'ytp'+Date.now();
+    document.getElementById('yt-container').appendChild(d);
+    ytPlayer = new YT.Player(d.id, {
+      videoId: c.video_id,
+      playerVars: { start: c.start_sec, autoplay: 1, controls: 0, modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, fs: 0, disablekb: 1 },
+      events: { onReady: e => e.target.playVideo() }
+    });
+  }
+  tick();
+}
+ 
+function togglePlay() {
+  if (!playing) {
+    if (!ytPlayer) { playClip(); return; }
+    try{ytPlayer.playVideo();}catch(e){}
+    playing=true; document.getElementById('play-ctrl').textContent='⏸'; document.getElementById('play-ctrl').setAttribute('aria-label','Pause'); tick();
+  } else {
+    try{ytPlayer.pauseVideo();}catch(e){}
+    playing=false; clearInterval(tInt); document.getElementById('play-ctrl').textContent='▶'; document.getElementById('play-ctrl').setAttribute('aria-label','Play');
+  }
+}
+ 
+function stopReset() {
+  clearInterval(tInt);
+  if (ytPlayer) { try{ytPlayer.stopVideo();}catch(e){} }
+  playing=false; document.getElementById('play-ctrl').textContent='▶'; document.getElementById('play-ctrl').setAttribute('aria-label','Play');
+}
+ 
+function tick() {
+  clearInterval(tInt);
+  tInt = setInterval(() => {
+    secs--;
+    const pct = Math.max(secs/60*100,0);
+    document.getElementById('pfill').style.width = pct+'%';
+    document.getElementById('pbar').setAttribute('aria-valuenow', Math.max(secs,0));
+    document.getElementById('timer').textContent = Math.max(secs,0);
+    if (secs<=10) document.getElementById('timer').classList.add('warn');
+    if (secs<=0) { clearInterval(tInt); stopReset(); document.getElementById('timer').textContent='00'; }
+  }, 1000);
+}
+ 
+function goClip(d) { const n=qi+d; if(n>=0&&n<quizOrder.length) loadClip(n); }
+ 
+function toast(msg) {
+  const t = document.getElementById('toast-bar');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+ 
+function shareLink() {
+  const url = window.location.href;
+  const btn = document.getElementById('share-btn');
+  navigator.clipboard.writeText(url).then(() => {
+    btn.classList.add('ok'); btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.classList.remove('ok'); btn.innerHTML='&#128279; Copy link'; }, 2500);
+  }).catch(() => { prompt('Copy and share this link:', url); });
+}
+ 
+window.onYouTubeIframeAPIReady = function() { ytReady = true; };
+const sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.body.appendChild(sc);
+</script>
+</body>
+</html>
